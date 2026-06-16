@@ -1,0 +1,840 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>简易日程管理器</title>
+
+  <style>
+    :root {
+      --primary: #4f46e5;
+      --primary-dark: #4338ca;
+      --bg: #f4f6fb;
+      --text: #111827;
+      --muted: #6b7280;
+      --border: #e5e7eb;
+      --card: #ffffff;
+      --danger: #dc2626;
+      --danger-bg: #fee2e2;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+        "Microsoft YaHei", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    .app {
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 28px 18px 40px;
+    }
+
+    .header {
+      margin-bottom: 18px;
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: flex-end;
+      flex-wrap: wrap;
+    }
+
+    h1 {
+      margin: 0 0 6px;
+      font-size: 28px;
+    }
+
+    .header p {
+      margin: 0;
+      color: var(--muted);
+    }
+
+    .toolbar {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 18px;
+      box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04);
+    }
+
+    .card h2 {
+      margin: 0 0 12px;
+      font-size: 18px;
+    }
+
+    .hint {
+      margin: 10px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .row {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .row > * {
+      flex: 1;
+    }
+
+    .row > button {
+      flex: 0 0 auto;
+    }
+
+    input[type="text"],
+    input[type="date"] {
+      width: 100%;
+      height: 42px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 0 12px;
+      font-size: 14px;
+      outline: none;
+      background: #fff;
+    }
+
+    input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.12);
+    }
+
+    button {
+      height: 42px;
+      border: 0;
+      border-radius: 10px;
+      padding: 0 14px;
+      background: var(--primary);
+      color: #fff;
+      font-weight: 600;
+      cursor: pointer;
+      transition: 0.15s;
+    }
+
+    button:hover {
+      background: var(--primary-dark);
+      transform: translateY(-1px);
+    }
+
+    button.secondary {
+      background: #fff;
+      color: var(--primary);
+      border: 1px solid #c7d2fe;
+    }
+
+    button.secondary:hover {
+      background: #eef2ff;
+    }
+
+    button.danger {
+      background: var(--danger-bg);
+      color: var(--danger);
+      border: 1px solid #fecaca;
+    }
+
+    button.danger:hover {
+      background: #fee2e2;
+    }
+
+    button.ghost {
+      background: #f3f4f6;
+      color: #374151;
+      border: 1px solid var(--border);
+    }
+
+    button.ghost:hover {
+      background: #e5e7eb;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    .panel-header {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: flex-start;
+    }
+
+    .panel-header p {
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .date-nav {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .date-nav button {
+      height: 34px;
+      padding: 0 10px;
+      font-size: 13px;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 8px;
+      margin: 14px 0 10px;
+      flex-wrap: wrap;
+    }
+
+    .tabs button {
+      height: 34px;
+      padding: 0 12px;
+      background: #f3f4f6;
+      color: #374151;
+      border: 1px solid var(--border);
+    }
+
+    .tabs button.active {
+      background: var(--primary);
+      color: #fff;
+      border-color: var(--primary);
+    }
+
+    .task-list {
+      list-style: none;
+      padding: 0;
+      margin: 12px 0 0;
+      display: grid;
+      gap: 10px;
+    }
+
+    .task {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 12px;
+      align-items: center;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: #fff;
+    }
+
+    .check {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .check input {
+      width: 18px;
+      height: 18px;
+      accent-color: var(--primary);
+      cursor: pointer;
+    }
+
+    .task-title {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .task.done .task-title {
+      color: var(--muted);
+      text-decoration: line-through;
+    }
+
+    .actions {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .actions button {
+      height: 32px;
+      padding: 0 10px;
+      font-size: 13px;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      height: 22px;
+      padding: 0 8px;
+      border-radius: 999px;
+      background: #eef2ff;
+      color: #4338ca;
+      border: 1px solid #c7d2fe;
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    .badge.ghost {
+      background: #f3f4f6;
+      color: #6b7280;
+      border-color: var(--border);
+    }
+
+    .empty {
+      padding: 18px;
+      border: 1px dashed #cbd5e1;
+      border-radius: 12px;
+      text-align: center;
+      color: var(--muted);
+      background: #f9fafb;
+    }
+
+    .footer-card {
+      margin-top: 16px;
+    }
+
+    @media (max-width: 820px) {
+      .toolbar,
+      .grid {
+        grid-template-columns: 1fr;
+      }
+
+      .task {
+        grid-template-columns: 1fr;
+      }
+
+      .actions {
+        justify-content: flex-end;
+      }
+
+      .header {
+        align-items: flex-start;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app">
+    <header class="header">
+      <div>
+        <h1>简易日程管理器</h1>
+        <p id="stats">正在加载...</p>
+      </div>
+    </header>
+
+    <div class="toolbar">
+      <form id="quickForm" class="card">
+        <h2>快速添加 Todo</h2>
+        <div class="row">
+          <input
+            id="quickTitle"
+            type="text"
+            placeholder="输入任务，例如：整理资料"
+            autocomplete="off"
+          />
+          <button type="submit">添加无日期任务</button>
+        </div>
+        <p class="hint">
+          这里添加的是普通 TodoList 任务，没有日期。它们会显示在右侧 TodoList 中。
+        </p>
+      </form>
+
+      <form id="dateForm" class="card">
+        <h2>按日期添加任务</h2>
+        <div class="row">
+          <input id="datePicker" type="date" />
+          <input
+            id="dateTitle"
+            type="text"
+            placeholder="输入任务，例如：提交周报"
+            autocomplete="off"
+          />
+          <button type="submit">添加到该日期</button>
+        </div>
+        <p class="hint">
+          这里添加的是按日期安排的任务。它们也会同步显示在 TodoList 中。
+        </p>
+      </form>
+    </div>
+
+    <section class="grid">
+      <article class="card panel">
+        <div class="panel-header">
+          <div>
+            <h2>日期任务</h2>
+            <p>当前日期：<strong id="selectedDateLabel"></strong></p>
+          </div>
+
+          <div class="date-nav">
+            <button type="button" class="secondary" id="todayBtn">今天</button>
+            <button type="button" class="secondary" id="tomorrowBtn">明天</button>
+          </div>
+        </div>
+
+        <div class="row" style="margin-top: 14px;">
+          <input id="dateFilter" type="date" />
+          <button type="button" id="jumpAddBtn">添加到此日期</button>
+        </div>
+
+        <ul id="dateTaskList" class="task-list"></ul>
+      </article>
+
+      <article class="card panel">
+        <div class="panel-header">
+          <div>
+            <h2>TodoList</h2>
+            <p>同步展示所有未完成任务，包括按日期添加的任务。</p>
+          </div>
+
+          <button type="button" class="danger" id="clearDoneBtn">
+            清空已完成
+          </button>
+        </div>
+
+        <div class="tabs">
+          <button type="button" id="todoAllBtn" class="active">全部待办</button>
+          <button type="button" id="todoTodayBtn">今天</button>
+          <button type="button" id="todoUndatedBtn">无日期</button>
+        </div>
+
+        <ul id="todoList" class="task-list"></ul>
+      </article>
+    </section>
+
+    <section class="card footer-card">
+      <div class="panel-header">
+        <div>
+          <h2>已完成</h2>
+          <p>已完成任务不会出现在 TodoList 中。</p>
+        </div>
+      </div>
+
+      <ul id="doneList" class="task-list"></ul>
+    </section>
+  </div>
+
+  <script>
+    const STORAGE_KEY = "simple_schedule_manager_tasks_v1";
+
+    let tasks = loadTasks();
+    let selectedDate = todayStr();
+    let todoFilter = "all";
+
+    const $ = (selector) => document.querySelector(selector);
+
+    const els = {
+      quickForm: $("#quickForm"),
+      quickTitle: $("#quickTitle"),
+      dateForm: $("#dateForm"),
+      datePicker: $("#datePicker"),
+      dateTitle: $("#dateTitle"),
+      selectedDateLabel: $("#selectedDateLabel"),
+      dateFilter: $("#dateFilter"),
+      todayBtn: $("#todayBtn"),
+      tomorrowBtn: $("#tomorrowBtn"),
+      jumpAddBtn: $("#jumpAddBtn"),
+      dateTaskList: $("#dateTaskList"),
+      todoList: $("#todoList"),
+      doneList: $("#doneList"),
+      stats: $("#stats"),
+      todoAllBtn: $("#todoAllBtn"),
+      todoTodayBtn: $("#todoTodayBtn"),
+      todoUndatedBtn: $("#todoUndatedBtn"),
+      clearDoneBtn: $("#clearDoneBtn"),
+    };
+
+    els.datePicker.value = selectedDate;
+    els.dateFilter.value = selectedDate;
+
+    render();
+
+    // 快速添加 Todo
+    els.quickForm.addEventListener("submit", (event) => {
+      event.preventDefault();
+
+      const title = els.quickTitle.value.trim();
+      if (!title) return;
+
+      addTask(title, null);
+      els.quickTitle.value = "";
+      els.quickTitle.focus();
+    });
+
+    // 按日期添加任务
+    els.dateForm.addEventListener("submit", (event) => {
+      event.preventDefault();
+
+      const title = els.dateTitle.value.trim();
+      const date = els.datePicker.value || selectedDate;
+
+      if (!title) return;
+
+      addTask(title, date);
+      els.dateTitle.value = "";
+      els.dateTitle.focus();
+    });
+
+    // 日期筛选
+    els.dateFilter.addEventListener("change", () => {
+      selectedDate = els.dateFilter.value || todayStr();
+      els.datePicker.value = selectedDate;
+      render();
+    });
+
+    els.todayBtn.addEventListener("click", () => {
+      selectedDate = todayStr();
+      els.datePicker.value = selectedDate;
+      render();
+    });
+
+    els.tomorrowBtn.addEventListener("click", () => {
+      selectedDate = addDaysStr(1);
+      els.datePicker.value = selectedDate;
+      render();
+    });
+
+    els.jumpAddBtn.addEventListener("click", () => {
+      selectedDate = els.dateFilter.value || selectedDate;
+      els.datePicker.value = selectedDate;
+      render();
+      els.dateTitle.focus();
+    });
+
+    // Todo 筛选
+    els.todoAllBtn.addEventListener("click", () => {
+      todoFilter = "all";
+      render();
+    });
+
+    els.todoTodayBtn.addEventListener("click", () => {
+      todoFilter = "today";
+      render();
+    });
+
+    els.todoUndatedBtn.addEventListener("click", () => {
+      todoFilter = "undated";
+      render();
+    });
+
+    els.clearDoneBtn.addEventListener("click", () => {
+      const doneCount = tasks.filter((task) => task.done).length;
+      if (!doneCount) return;
+
+      const confirmed = confirm(`确定清空 ${doneCount} 项已完成任务吗？`);
+      if (!confirmed) return;
+
+      tasks = tasks.filter((task) => !task.done);
+      saveTasks();
+      render();
+    });
+
+    // 删除、编辑
+    document.addEventListener("click", (event) => {
+      const button = event.target.closest("button[data-action]");
+      if (!button) return;
+
+      const { action, id } = button.dataset;
+
+      if (action === "edit") {
+        editTask(id);
+      }
+
+      if (action === "delete") {
+        deleteTask(id);
+      }
+    });
+
+    // 勾选完成
+    document.addEventListener("change", (event) => {
+      const checkbox = event.target.closest('input[data-action="toggle"]');
+      if (!checkbox) return;
+
+      toggleTask(checkbox.dataset.id, checkbox.checked);
+    });
+
+    function addTask(title, date) {
+      const now = Date.now();
+
+      tasks.push({
+        id: createId(),
+        title,
+        date,
+        done: false,
+        createdAt: now,
+        updatedAt: now,
+      });
+
+      saveTasks();
+      render();
+    }
+
+    function toggleTask(id, done) {
+      const task = findTask(id);
+      if (!task) return;
+
+      task.done = Boolean(done);
+      task.updatedAt = Date.now();
+
+      saveTasks();
+      render();
+    }
+
+    function deleteTask(id) {
+      const task = findTask(id);
+      if (!task) return;
+
+      const confirmed = confirm(`确定删除「${task.title}」吗？`);
+      if (!confirmed) return;
+
+      tasks = tasks.filter((item) => item.id !== id);
+
+      saveTasks();
+      render();
+    }
+
+    function editTask(id) {
+      const task = findTask(id);
+      if (!task) return;
+
+      const newTitle = prompt("修改任务标题：", task.title);
+      if (newTitle === null) return;
+
+      const trimmedTitle = newTitle.trim();
+      if (!trimmedTitle) {
+        alert("任务标题不能为空");
+        return;
+      }
+
+      const newDate = prompt(
+        "修改日期，格式 YYYY-MM-DD；留空表示无日期：",
+        task.date || ""
+      );
+
+      if (newDate === null) return;
+
+      const trimmedDate = newDate.trim();
+
+      if (trimmedDate && !isValidDateString(trimmedDate)) {
+        alert("日期格式不正确，请使用 YYYY-MM-DD");
+        return;
+      }
+
+      task.title = trimmedTitle;
+      task.date = trimmedDate || null;
+      task.updatedAt = Date.now();
+
+      saveTasks();
+      render();
+    }
+
+    function render() {
+      els.selectedDateLabel.textContent = selectedDate;
+      els.dateFilter.value = selectedDate;
+      els.datePicker.value = selectedDate;
+
+      updateTodoButtons();
+
+      const dateTasks = getTasksByDate(selectedDate);
+      els.dateTaskList.innerHTML = renderTaskList(
+        dateTasks,
+        "这一天还没有任务，可以在上方添加。"
+      );
+
+      const todoTasks = getTodoTasks();
+      const filterName = {
+        all: "全部待办",
+        today: "今天待办",
+        undated: "无日期待办",
+      }[todoFilter];
+
+      els.todoList.innerHTML = renderTaskList(
+        todoTasks,
+        `${filterName}为空。`
+      );
+
+      els.doneList.innerHTML = renderTaskList(
+        getDoneTasks(),
+        "暂无已完成任务。"
+      );
+
+      updateStats();
+    }
+
+    function renderTaskList(list, emptyText) {
+      if (!list.length) {
+        return `<li class="empty">${emptyText}</li>`;
+      }
+
+      return list.map(renderTask).join("");
+    }
+
+    function renderTask(task) {
+      const dateText = task.date ? task.date : "无日期";
+
+      return `
+        <li class="task ${task.done ? "done" : ""}">
+          <label class="check" title="${escapeHtml(task.title)}">
+            <input
+              type="checkbox"
+              data-action="toggle"
+              data-id="${task.id}"
+              ${task.done ? "checked" : ""}
+            />
+            <span class="task-title">${escapeHtml(task.title)}</span>
+          </label>
+
+          <div class="actions">
+            <span class="badge ${task.date ? "" : "ghost"}">
+              ${escapeHtml(dateText)}
+            </span>
+            <button type="button" class="secondary" data-action="edit" data-id="${task.id}">
+              编辑
+            </button>
+            <button type="button" class="danger" data-action="delete" data-id="${task.id}">
+              删除
+            </button>
+          </div>
+        </li>
+      `;
+    }
+
+    function getTasksByDate(date) {
+      return sortTasks(tasks.filter((task) => task.date === date));
+    }
+
+    function getTodoTasks() {
+      let list = tasks.filter((task) => !task.done);
+
+      if (todoFilter === "today") {
+        list = list.filter((task) => task.date === selectedDate);
+      }
+
+      if (todoFilter === "undated") {
+        list = list.filter((task) => !task.date);
+      }
+
+      return sortTasks(list);
+    }
+
+    function getDoneTasks() {
+      return sortDoneTasks(tasks.filter((task) => task.done));
+    }
+
+    function sortTasks(list) {
+      return [...list].sort((a, b) => {
+        if (a.done !== b.done) return a.done ? 1 : -1;
+
+        if (a.date && b.date) {
+          return a.date.localeCompare(b.date) || a.createdAt - b.createdAt;
+        }
+
+        if (a.date && !b.date) return -1;
+        if (!a.date && b.date) return 1;
+
+        return b.createdAt - a.createdAt;
+      });
+    }
+
+    function sortDoneTasks(list) {
+      return [...list].sort(
+        (a, b) => (b.updatedAt || b.createdAt) - (a.updatedAt || a.createdAt)
+      );
+    }
+
+    function updateStats() {
+      const total = tasks.length;
+      const todo = tasks.filter((task) => !task.done).length;
+      const done = tasks.filter((task) => task.done).length;
+      const selectedCount = getTasksByDate(selectedDate).length;
+
+      els.stats.textContent =
+        `共 ${total} 项任务 · 待办 ${todo} 项 · 已完成 ${done} 项 · ` +
+        `${selectedDate} 有 ${selectedCount} 项任务`;
+    }
+
+    function updateTodoButtons() {
+      const map = {
+        all: els.todoAllBtn,
+        today: els.todoTodayBtn,
+        undated: els.todoUndatedBtn,
+      };
+
+      Object.entries(map).forEach(([key, button]) => {
+        button.classList.toggle("active", key === todoFilter);
+      });
+    }
+
+    function findTask(id) {
+      return tasks.find((task) => task.id === id);
+    }
+
+    function saveTasks() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
+    }
+
+    function loadTasks() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        const data = raw ? JSON.parse(raw) : [];
+        return Array.isArray(data) ? data : [];
+      } catch (error) {
+        console.warn("读取本地数据失败：", error);
+        return [];
+      }
+    }
+
+    function createId() {
+      return `task_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+    }
+
+    function todayStr() {
+      return formatDateLocal(new Date());
+    }
+
+    function addDaysStr(days) {
+      const date = new Date();
+      date.setDate(date.getDate() + days);
+      return formatDateLocal(date);
+    }
+
+    function formatDateLocal(date) {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const day = String(date.getDate()).padStart(2, "0");
+      return `${year}-${month}-${day}`;
+    }
+
+    function isValidDateString(value) {
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+
+      const [year, month, day] = value.split("-").map(Number);
+      const date = new Date(year, month - 1, day);
+
+      return (
+        date.getFullYear() === year &&
+        date.getMonth() === month - 1 &&
+        date.getDate() === day
+      );
+    }
+
+    function escapeHtml(value) {
+      return String(value)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+  </script>
+</body>
+</html>
